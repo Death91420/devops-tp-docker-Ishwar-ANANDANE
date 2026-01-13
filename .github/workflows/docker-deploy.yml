@@ -50,7 +50,9 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ghcr.io/death91420/devops-tp-docker-ishwar-anandane:latest
+            ghcr.io/death91420/devops-tp-docker-ishwar-anandane:${{ github.ref_name }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
