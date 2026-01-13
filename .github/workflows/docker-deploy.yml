@@ -3,13 +3,14 @@ name: Build and Push Docker Image
 on:
   push:
     branches: [ main ]
-    tags: [ 'v*' ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ main ]
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: death91420/devops-tp-docker-ishwar-anandane
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push:
@@ -32,13 +33,28 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-          tags: |
-            ghcr.io/${{ env.IMAGE_NAME }}:latest
-            ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
-            ${{ github.ref_type == 'tag' && format('ghcr.io/{0}:{1}', env.IMAGE_NAME, github.ref_name) || '' }}
+      - name: Image digest
+        run: echo ${{ steps.meta.outputs.digest }}
